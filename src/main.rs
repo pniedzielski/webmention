@@ -1,4 +1,6 @@
 use actix_web::{web, App, HttpResponse, HttpServer, post};
+use actix::spawn;
+use reqwest::Client;
 use serde::Deserialize;
 use url::Url;
 
@@ -45,6 +47,18 @@ async fn index(form: web::Form<Webmention>) -> HttpResponse {
     let wm = form.into_inner();
 
     if request_verify(&wm) {
+        let source = wm.source.clone();
+        let fut = async move {
+            let client = Client::new();
+            let response = client.get(source)
+                .header("User-Agent", "Actix-web")
+                .header("Accept", "text/html, text/markdown;q=0.9, text/plain;q=0.8, application/json;q=0.7")
+                .send().await;
+
+            eprintln!("Response: {:?}", response);
+        };
+        spawn(fut);
+
         eprintln!("VALID: {} -> {}", wm.source, wm.target);
         HttpResponse::Ok().body(
             format!("source: {}\ntarget: {}", wm.source, wm.target)
