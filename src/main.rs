@@ -45,10 +45,12 @@ async fn index(form: web::Form<Webmention>) -> HttpResponse {
     let wm = form.into_inner();
 
     if request_verify(&wm) {
+        eprintln!("VALID: {} -> {}", wm.source, wm.target);
         HttpResponse::Ok().body(
             format!("source: {}\ntarget: {}", wm.source, wm.target)
         )
     } else {
+        eprintln!("INVALID: {} -> {}", wm.source, wm.target);
         HttpResponse::BadRequest().body(
             "Could not verify Webmention"
         )
